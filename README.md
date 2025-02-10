@@ -31,7 +31,9 @@ disabled the power to the USB driver, current draw in sleep mode went
 down to 25µA, according to my trusty Fluke 189.
 
 What follows is instructions for converting these quasimodo modules to
-play nice in sleep mode and draw only 25µA of current.
+play nice in sleep mode and draw under 100µA. I got the NANO module with
+an AT328p clone drawing 20µA of current, while with a genuine AT328p
+drawing 57µA. Go figure.
 
 ## Real Project µA Sleep Mode
 
@@ -39,12 +41,23 @@ play nice in sleep mode and draw only 25µA of current.
 
 Some hardware changes will need to be made to the module. The first two
 you will need to do on the Nano module whether it is a genuine one or a
-clone:
+clone.
 
-Top View:  
-![TopView.png](images/TopView.png)  
-Bottom View:  
+##### Top View
+
+![TopView.png](images/TopView.png)
+
+##### Bottom View
+
 ![BottomView.png](images/BottomView.png)
+
+##### Top View after Modifications
+
+![TopView_Mod.png](images/TopView_Mod.png)
+
+##### Bottom View after Modifications
+
+![BottomView_Mod.png](images/BottomView_Mod.png)
 
 1. Power LED needs to be disabled by removing it or its 1k resistor. It
    draws about 3-4mA.
@@ -77,6 +90,8 @@ Bottom View:
       connection. This via is also marked on the top side.
    4. Add a Schottky diode from the USB power side to the +5V power
       side, to allow the board to be powered externally or from the USB.
+      This is easily done by removing the Schottky diode on the board
+      and soldering its cathode to the now free LDO output pad.
 
       I found out there is no Schottky diode isolating the module power
       from USB when it is externally powered. However, there is one,
@@ -88,7 +103,7 @@ Bottom View:
    5. To use USB port for communications and programming when it is
       connected but disable the USB driver chip when it is not, you will
       need to:
-      1. Desolder the resistor that connects to the `USB+5` line and
+      1. Desolder the resistor that connects to the `USB +5` line and
          solder it to `+5V` trace, the one cut in 3.ii. If you scrape or
          sand away the solder mask over that trace opposite to the
          resistor pad, the one near to the USB driver, then you will be
@@ -107,12 +122,37 @@ Bottom View:
          disconnected `GND` pins of the USB driver, to ground when
          drawing power from the USB.
 
-         The Drain pin goes to `GND`, the Gate pin goes to `USB 5+` and
+         The Drain pin goes to `GND`, the Gate pin goes to `USB +5` and
          the Source pin goes to the two lifted pins of the USB driver
          IC.
-      3. Add a resistor between the `USB 5+` and `GND` to keep the
+      3. Add a resistor between the `USB +5` and `GND` to keep the
          MOSFET turned off when the USB cable is not connected. The
          value is not critical. Anything between 1k and 100k will work.
+         It is easiest to solder in place of the do-nothing diode
+         (3.iv).
+
+
+This schematic shows the end result changes to the module:
+
+![ModifedModuleSchematic.png](images/ModifedModuleSchematic.png)
+
+In the
+[Bottom View after Modifications](#bottom-view-after-modifications), you
+can see:
+
+1. New Resistor (33k) replacing the diode of (3.iv).
+2. Resistor (5.i) turned 90 degrees and now soldered between its old pad
+   and the cut trace of (3.ii)
+3. Diode (3.iv) moved to the LDO output pad and its anode connected by a
+   wire to `USB +5` soldered on the now unused pad of resistor (5.i).
+4. A 2N7002 MOSFET is added. Its Source pin soldered to `GND` through
+   some scraped off solder mask. Its Gate is connected by wire to
+   `USB+5` and its Drain is connected to the two (3.i) pins via a wire.
+5. Hidden by the wire is the indent left after grinding off the via pad
+   (3.iii).
+
+In the [Top View after Modifications](#top-view-after-modifications),
+you can see resistor for the power LED removed.
 
 ### Project Dependent Software Mods
 
