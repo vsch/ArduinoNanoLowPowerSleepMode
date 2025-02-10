@@ -1,40 +1,50 @@
 # Arduino Nano Low Power Sleep Mode Test
 
-Tiny sketch to put the Arduino Nano into sleep mode, after blinking its
-LED a few times, so you can test the quiescent current of the module.
-This can be run with the bare module connected to a programmer with
-nothing else for the test needed, other than the ability to measure the
-quiescent current the module is drawing from the USB. A good test to run
-on a module before wiring it into a project. :smirk:
+Tiny sketch to put the Arduino Nano into sleep mode, so you can test the
+quiescent current of the module, after blinking its LED a few times to
+let you know that it isn't just dead but sleeping.
 
-I discovered that not all Arduino modules on AliExpress are made equal.
-Some have genuine Atmel chips, have some Atmel clones and others, like
-the ones I got stuck with, which have cloned AT328p and an unmarked
-`CH340`/`FT230` like USB driver clone chips that draw 3.8mA all on their
-own, whether the USB cable is connected or not. I say 'like' because
-these don't match the pin-out of either chips and being totally unmarked
-makes it harder to get find their datasheet.
+This can be run with the bare module connected to a USB with nothing
+else needed for the test, other than the ability to measure the current
+it is drawing from the USB. This is a good test to run on a module
+before wiring it into a project requiring low current draw in sleep
+mode. :smirk:
 
-This is what motivated me to do down a rabbit hole for a few days trying
-to figure out how I can make my module go to sleep and use less than a
-100µA of current, 80-90µA actually, as I was able to do it on my other
-project with the Arduino Pro Mini clone.
+Not all Arduino modules on AliExpress are made equal, as I discovered.
+Some have genuine AT328p chips, have some clones and others have cloned
+AT328p and an unmarked `CH340`/`FT230` like clone USB driver chips that
+draw 4mA all on their own, whether the USB cable is connected or not. I
+say 'like' because these don't match the pin-out of either genuine
+chips, and being totally unmarked make it hard to find their datasheet
+or pin-out.
 
-Contrary to some forums where the issue was discussed and heatly
-debated, the issue boiled down to the unmarked USB driver chip and not
-the cloned AT328p controller chip. I know. I replaced the controller
-chip on one module, with an official Atmel 328p chip and the current
-draw did not budge. However, when I disabled the power to the USB driver
-chip, current draw in sleep mode went down to 25µA (according to my
-trusty Fluke 189).
+This discovery motivated me down a rabbit hole for a few days trying to
+make this module sleep, while drawing less than a 100µA. I was able to
+get 80-90µA on an Arduino Pro Mini clone, with genuine AT328p and no USB
+driver.
+
+Contrary to claims on some forums where the issue was discussed and
+heatedly debated, the problem boiled down to the unmarked USB driver and
+not the cloned AT328p MCU. I replaced the MCU on one module, with a
+genuine AT328p, and the current draw did not budge. However, when I
+disabled the power to the USB driver, current draw in sleep mode went
+down to 25µA, according to my trusty Fluke 189.
+
+What follows is instructions for converting these quasimodo modules to
+play nice in sleep mode and draw only 25µA of current.
 
 ## Real Project µA Sleep Mode
 
 ### Hardware Mods Required
 
 Some hardware changes will need to be made to the module. The first two
-you will need to do on the Nano module whether it is an official one or
-a clone:
+you will need to do on the Nano module whether it is a genuine one or a
+clone:
+
+Top View:  
+![TopView.png](images/TopView.png)  
+Bottom View:  
+![BottomView.png](images/BottomView.png)
 
 1. Power LED needs to be disabled by removing it or its 1k resistor. It
    draws about 3-4mA.
@@ -44,36 +54,65 @@ a clone:
    from other modules.
 2. Remove the L3117 LDO regulator on the under side of the module. It
    has a quiescent current draw of 5-8mA.
-3. If you are unlucky enough to have gotten the `CH340` quasimodo clone,
-   then things will get more ugly.
+
+   The pin bringing Vin from the pad to the LDO will lift off the board
+   at any vertical tension on the pin. You will need to desolder it
+   first. Heat the pad under it and when the solder melts, pry it up
+   with a pair of tweezers.
+
+   Do the same for the other two pins before proceeding to the wide
+   tab/pin.
+3. If you are unlucky enough to have gotten the `CH340`/`FT230`
+   quasimodo clone, then things will get more ugly.
    1. You will need to modify the module to isolate the USB driver chip
       from the 5V supply by desoldering and bending up its two `GND`
       pins up from their pads.
    2. You will need to cut a trace connecting the USB 5V directly to +5V
-      of the module. Color me surprised when I found out there is no
-      Schottky diode isolating the module power from USB, if it is
-      externally powered.
-   3. Add a Schottky diode from the USB power side to the +5V power
+      of the module, **shown in RED**. This is done through a via marked
+      in a green circle. On some boards the silkscreen is covering it.
+      You don't want to damage it, so cut the trace a bit from this via.
+   3. And grind out the top of a via **shown in RED**. The easiest way I
+      found, was to use a tiny ball mill, if you have one, to grind away
+      the top of the via by hand, to break the USB power to +5V
+      connection. This via is also marked on the top side.
+   4. Add a Schottky diode from the USB power side to the +5V power
       side, to allow the board to be powered externally or from the USB.
-   4. To use USB port for communications and programming when it is
+
+      I found out there is no Schottky diode isolating the module power
+      from USB when it is externally powered. However, there is one,
+      reverse biased, across the decoupling capacitor. I have no idea
+      what it is doing there, other than a mistake in the PCB layout. So
+      you can remove the diode from where it is and use it where it's
+      intended by manually wiring between the USB +5 and the +5V of the
+      module.
+   5. To use USB port for communications and programming when it is
       connected but disable the USB driver chip when it is not, you will
       need to:
-      1. Desolder a resistor that connects to the now isolated USB line
-         and solder it to the now +5V isolated from USB power trace.
-         Without changing the pull-up source for the resistor, it will
-         pull the USB power in line to 2V through a 4.7k resistor. This
-         will either turn on the MOSFET all the time, if you use a high
-         value resistor to ground the gate pin, or will barely turn it
-         on so that the USB driver is not working but drawing additional
-         200, 300 or 500 µA of current when in sleep mode. This kept me
-         up for two days trying to figure out why am I seeing this extra
-         current draw when the USB driver is disabled.
+      1. Desolder the resistor that connects to the `USB+5` line and
+         solder it to `+5V` trace, the one cut in 3.ii. If you scrape or
+         sand away the solder mask over that trace opposite to the
+         resistor pad, the one near to the USB driver, then you will be
+         able to solder the resistor back on the trace and its old pad.
+
+         NOTE: Without changing the pull-up source for the resistor, it
+         will pull the `USB+5` power in line to 2V through a 4.7k
+         resistor, when the USB is not connected. This will either turn
+         on the MOSFET all the time, or will turn it on with a high
+         channel resistance, so that the USB driver will not work, but
+         will draw additional 200, 300 or 500 µA of current when in
+         sleep mode. This one kept me up for two days trying to figure
+         out why am I seeing this extra current draw when the USB driver
+         is "**disabled**".
       2. Add an N-MOSFET and a resistor which will switch the
          disconnected `GND` pins of the USB driver, to ground when
-         drawing power from the USB. This will allow the module to work
-         as before if the USB is connected, but will shut off the USB
-         driver glutton when powered externally, like from rechargeable
-         batteries.
+         drawing power from the USB.
+
+         The Drain pin goes to `GND`, the Gate pin goes to `USB 5+` and
+         the Source pin goes to the two lifted pins of the USB driver
+         IC.
+      3. Add a resistor between the `USB 5+` and `GND` to keep the
+         MOSFET turned off when the USB cable is not connected. The
+         value is not critical. Anything between 1k and 100k will work.
 
 ### Project Dependent Software Mods
 
@@ -126,10 +165,10 @@ you will need to have the following:
    tried to work with my PACE soldering/desoldering/hot-air stations and
    found that I had no tips sized for the tiny, microscopic really, SMT
    components. The 1/32" tip which served me fine for years, felt like a
-   golf club when working with modern SMT. I looked into getting
+   golf club when working with today's SMT. I looked into getting
    appropriate soldering tips for the PACE but didn't feel like spending
-   CDN$120 on an 8-piece set or buying individually a few that I needed
-   at CDN$28 a pop.
+   CDN$120 on an 8-piece variety set or buying a few individually at
+   CDN$28 a pop.
 
    After trying to make do with my existing equipment, I caved in and
    got a
@@ -137,32 +176,17 @@ you will need to have the following:
    on AliExpress for less that it would cost me to get tips for my PACE.
    I wouldn't be able to do this work without the upgrade.
 
-   It is so fast to heat up that I have it configured to go to stand-by
-   (at 100C) in 30 seconds of being idle. Comes out of sleep when I pick
-   it up and heats up to 360C in about a second, before I am ready to
-   use it.
-
-   It heats up from dead cold 18C to 360C in less 3 seconds, USB-C
-   powered, 100W Max or configurable to lower for use with a lower
-   wattage USB supply, weighs nothing, has fine tips that do not get in
-   the way and are swapped by just pulling them out and inserting.
-
-   Finally, a fully loaded set is under CDN$120 on the official site, on
-   AliExpress and you can find it on special there down to CDN$105. My
-   PACE soldering station cost me $500 and desoldering/hot-air rework
-   another $900, in 25-years ago dollars. They work great and are
-   reliable, but if I was getting my electronics hobby workshop together
-   today, I would not want to fork out that kind of money.
-
-3. Unless you are young and eagle-eyed, a bi-focal magnifier to allow
-   you to see what you are doing. A digital microscope screen will work
-   but not having depth perception will make it a lot harder to
-   coordinate your movement at small scale, without fair bit of
-   practice.
+3. Unless you are young and eagle-eyed, a binocular magnifier to allow
+   you to see what you are doing, with both eyes. A digital microscope
+   screen will work but not having any depth perception will make it a
+   lot harder to coordinate your movement at small scale, without a fair
+   bit of practice.
 
 4. Quality fine tweezers that will not slip/snap around the tiny
-   components flicking them somewhere in the room, never to be found.
+   components flicking them somewhere, where you will never find them.
 
-5. Soldering supplies: fine (0.015" or 0.4 mm) flux core solder, flux
+5. Soldering supplies: fine flux core solder (0.015" or 0.4 mm), flux
    paste in a syringe for SMT, 2 or 1 mm wide solder wick.
+
+6. Lots of calm patience.
 
