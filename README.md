@@ -153,13 +153,7 @@ you will need to have the following:
    more convenient way to do it is to use the
    [FNIRSI® FNB58 USB Fast Charge Tester](https://www.fnirsi.com/products/fnb58),
    which shows USB current draw to 10µA resolution and is within 25µA to
-   75µA of the Fluke. It is a feature packed USB tester and more
-   affordable than the Fluke 289 modernized replacement for the 189
-   (search for the 289 and if you don't get sticker shock, I am looking
-   to be adopted.) I got my FNB58 on Amazon for CDN$75 in Nov 2024, at
-   the time of writing (Feb2025, after the precipitous drop of CDN vs
-   the USD) it is CDN$68 on the FNIRSI website and CDN$53 on AliExpress
-   with free shipping.
+   75µA of the Fluke.
 
 2. Temperature controlled soldering iron with tips for SMT rework. I
    tried to work with my PACE soldering/desoldering/hot-air stations and
