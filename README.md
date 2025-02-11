@@ -100,7 +100,10 @@ clone.
       you can remove the diode from where it is and use it where it's
       intended by manually wiring between the USB +5 and the +5V of the
       module.
-   5. To use USB port for communications and programming when it is
+   5. If you need 3.3V from the Nano module, then you will need to cut a
+      trace which is connecting the 3.3V regulator to `USB+5` and solder
+      a wire from the 3.3V regulator to `+5V`.
+   6. To use USB port for communications and programming when it is
       connected but disable the USB driver chip when it is not, you will
       need to:
       1. Desolder the resistor that connects to the `USB +5` line and
@@ -141,15 +144,17 @@ In the
 can see:
 
 1. New Resistor (33k) replacing the diode of (3.iv).
-2. Resistor (5.i) turned 90 degrees and now soldered between its old pad
+2. Resistor (6.i) turned 90 degrees and now soldered between its old pad
    and the cut trace of (3.ii)
 3. Diode (3.iv) moved to the LDO output pad and its anode connected by a
-   wire to `USB +5` soldered on the now unused pad of resistor (5.i).
+   wire to `USB +5` soldered on the now unused pad of resistor (6.i).
 4. A 2N7002 MOSFET is added. Its Source pin soldered to `GND` through
    some scraped off solder mask. Its Gate is connected by wire to
    `USB+5` and its Drain is connected to the two (3.i) pins via a wire.
 5. Hidden by the wire is the indent left after grinding off the via pad
    (3.iii).
+6. For `3.3V` regulator the wire goes from its tab to the tab of the
+   removed 5V LDO Regulator. Not shown in photo.
 
 In the [Top View after Modifications](#top-view-after-modifications),
 you can see resistor for the power LED removed.
